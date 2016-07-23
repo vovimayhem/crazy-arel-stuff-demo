@@ -1,0 +1,97 @@
+version: "2"
+
+volumes:
+  postgres-data:      # The postgres data store volume
+    driver: local
+  elasticsearch-data: # The redis data store volume
+    driver: local
+  gems:               # The volume where all gems will be stored
+    driver: local
+
+services:
+  # Our postgres service:
+  postgres:
+    image: postgres:9.5.3
+    ports:
+      # We'll bind our host's port 5432 to postgres's port 5432, so we can use
+      # our database IDEs with it:
+      - 5432:5432
+    volumes:
+      # We'll store the postgres data in the 'postgres-data' volume we defined
+      # in the 'volumes' section:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: 3x4mpl3
+
+  # Our Elacticsearch service:
+  elasticsearch:
+    image: elasticsearch:2.3.4
+    ports:
+      # We'll bind our host's ports 9200 and 9300 to elasticsearch ports 9200
+      # and 9300, so we can use the Elasticsearch interface directly:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      # We'll store the elasticsearch data in the 'elasticsearch-data' volume we
+      # previously defined in the 'volumes' section:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    environment:
+      POSTGRES_PASSWORD: 3x4mpl3
+
+  # The app container:
+  app:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    image: crazy-arel-stuff-demo:latest
+    command: rails server
+    entrypoint: /usr/src/app/development-entrypoint
+    volumes:
+      # Mount our app code directory (".") into our app containers at the
+      # "/usr/src/app" folder:
+      - .:/usr/src/app
+
+      # Mount the 'gems' volume on the folder that stores bundled gems:
+      - gems:/usr/local/bundle
+
+    # Specify the directory from where all commands sent to the container will be
+    # issued to where the code is mounted:
+    working_dir: /usr/src/app
+
+    # Keep the stdin open, so we can attach to our app container's process
+    # and do things such as byebug, etc:
+    stdin_open: true
+
+    # Enable sending signals (CTRL+C, CTRL+P + CTRL+Q) into the container:
+    tty: true
+
+    # Link to our postgres and redis containers, so they can be visible from our
+    # app containers:
+    links:
+      # We'll include a link to the 'postgres' container, making it visible from
+      # the container using the 'db' hostname:
+      - postgres:db
+
+      # We'll include a link to the 'elasticsearch' container, making it visible
+      # from the container using the 'keyval' hostname:
+      - elasticsearch:search
+
+    # Specify environment variables available for our app containers. We'll leave
+    # a YML anchor in case we need to override or add more variables if needed on
+    # each app container:
+    environment:
+      # We'll set the DATABASE_URL environment variable for the app to connect
+      # to our postgres container - no need to have environment connection
+      # details (such as passwords, hostnames, etc) on the 'config/database.yml'
+      # file:
+      DATABASE_URL: postgres://postgres:3x4mpl3@db:5432/demo_app_development
+
+      # We'll set the ELASTICSEARCH_URL environment variable for the app to
+      # connect to our redis container:
+      ELASTICSEARCH_URL: http://search:9200
+
+      # We'll set the RAILS_ENV and RACK_ENV environment variables to
+      # 'development', so our app containers will start in 'development' mode
+      # on this compose project:
+      RAILS_ENV: development
+      RACK_ENV: development
