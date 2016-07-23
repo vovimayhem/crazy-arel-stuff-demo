@@ -56,6 +56,6 @@ class DbFill < Thor
     end
 
     inbound_order.trigger :receive
-    inbound_order.trigger :finish
+    inbound_order.trigger :complete
   end
 end
