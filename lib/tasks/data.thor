@@ -1,6 +1,6 @@
 require "thor/rails"
 
-class DbFill < Thor
+class Data < Thor
   include Thor::Rails
 
   desc "add_categories", "Generates dummy product categories"
