@@ -24,6 +24,16 @@ RUN set -ex \
   && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
   && rm "node-v$NODE_VERSION-linux-x64.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt
 
+# Install postgres client tools, so we can dump the app database schema in SQL
+# format:
+RUN set -ex \
+  && apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 \
+  && PG_MAJOR=9.5 \
+  && echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client-$PG_MAJOR \
+  && rm -rf /var/lib/apt/lists/*
+
 # We'll add our app's bin directory to the PATH:
 ENV PATH=/usr/src/app/bin:$PATH \
     HOME=/usr/src/app
