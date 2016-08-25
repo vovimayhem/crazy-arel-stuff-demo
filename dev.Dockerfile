@@ -1,7 +1,14 @@
-# We'll start off with MRI ruby version 2.3.1:
+# 1: We'll start off with MRI ruby version 2.3.1:
 FROM ruby:2.3.1
 
-# Include node as javascript runtime:
+# 2: We'll set the application path as the working directory
+WORKDIR /usr/src/app
+
+# 3: We'll add the app's binaries path to $PATH:
+ENV HOME=/usr/src/app \
+    PATH=/usr/src/app/bin:$PATH
+
+# 4: Include node as javascript runtime:
 # gpg keys listed at https://github.com/nodejs/node
 RUN set -ex \
   && NODE_VERSION=6.3.1 \
@@ -24,7 +31,7 @@ RUN set -ex \
   && tar -xJf "node-v$NODE_VERSION-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
   && rm "node-v$NODE_VERSION-linux-x64.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt
 
-# Install postgres client tools, so we can dump the app database schema in SQL
+# 5: Install postgres client tools, so we can dump the app database schema in SQL
 # format:
 RUN set -ex \
   && apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 \
@@ -34,6 +41,7 @@ RUN set -ex \
   && apt-get install -y --no-install-recommends postgresql-client-$PG_MAJOR \
   && rm -rf /var/lib/apt/lists/*
 
-# We'll add our app's bin directory to the PATH:
-ENV PATH=/usr/src/app/bin:$PATH \
-    HOME=/usr/src/app
+# 6: Install the current project gems - they can be safely changed later during
+# developmenr via `bundle install` or `bundle update`:
+ADD Gemfile* /usr/src/app/
+RUN set -ex && bundle install

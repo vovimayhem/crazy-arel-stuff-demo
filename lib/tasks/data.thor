@@ -46,16 +46,20 @@ class Data < Thor
 
     inbound_order = InboundOrder.create notes: "Created by the dummy data filler"
 
-    line_count.times.each do
-      random_shelf_id = shelf_ids[SecureRandom.random_number(shelf_ids.count - 1)]
-      random_product_id = product_ids[SecureRandom.random_number(product_ids.count - 1)]
-      inbound_order.inbound_logs.create shelf_id: random_shelf_id,
-                                        product_id: random_product_id,
-                                        quantity: requested_quantity,
-                                        properties: { size: SecureRandom.random_number(100) }
+    ActiveRecord::Base.transaction do
+      line_count.times.each do
+        random_shelf_id = shelf_ids[SecureRandom.random_number(shelf_ids.count - 1)]
+        random_product_id = product_ids[SecureRandom.random_number(product_ids.count - 1)]
+        inbound_order.inbound_logs.create shelf_id: random_shelf_id,
+                                          product_id: random_product_id,
+                                          quantity: requested_quantity,
+                                          properties: { size: SecureRandom.random_number(100) }
+      end
     end
 
     inbound_order.trigger :receive
+
+    ask("Hit ENTER to proceed...")
     inbound_order.trigger :complete
   end
 end

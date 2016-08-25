@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: dev.Dockerfile
-    image: crazy-arel-stuff-demo:latest
+    image: vovimayhem/crazy-arel-stuff-demo:development
     command: rails server
     entrypoint: /usr/src/app/development-entrypoint
     volumes:
